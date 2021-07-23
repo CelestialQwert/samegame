@@ -6,16 +6,16 @@
 # to match your GBDK root directory (ex: GBDK_HOME = "C:/GBDK/"
 GBDK_HOME = /mnt/d/Programs/gameboy_dev/gbdk/
 
-LCC = $(GBDK_HOME)bin/lcc -Wm-yn"SAMEGAME"  -Wm-yc
+LCC = $(GBDK_HOME)bin/lcc -Wm-yn"SAMEGAME" -Wm-yc
 
 # You can uncomment the line below to turn on debug output
-# LCC = $(LCC) -debug
+LCC := $(LCC) -debug
 
 # You can set the name of the .gb ROM file here
 PROJECTNAME = samegame
 
 BINS	    = $(PROJECTNAME).gb
-CSOURCES   := $(wildcard *.c) $(wildcard gfx/*.c) 
+CSOURCES   := $(wildcard src/*.c) $(wildcard src/gfx/*.c) 
 ASMSOURCES := $(wildcard *.s)
 
 all:	$(BINS)

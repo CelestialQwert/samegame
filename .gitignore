@@ -1,3 +1,9 @@
 *.gb
-samegame.sublime-project
-samegame.sublime-workspace
+*.sublime-project
+*.sublime-workspace
+.vscode
+*.code-workspace
+make.bat
+samegame.noi
+samegame.map
+samegame.cdb
