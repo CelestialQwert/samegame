@@ -60,7 +60,7 @@ void check_input(){
             break;
         case J_A:
             if (holdtime == 0){
-                kill_tile(cursor_x, cursor_y);
+                select_tile(cursor_x, cursor_y);
             }
             holdtime = 8;
             break;

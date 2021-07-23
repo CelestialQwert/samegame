@@ -17,5 +17,7 @@ void update_bkg_playfield(uint8_t fx, uint8_t fy, uint8_t val);
 void update_playfield(uint8_t fx, uint8_t fy, uint8_t val);
 void init_playfield();
 void kill_tile(uint8_t tx, uint8_t ty);
-
+uint8_t check_tile_for_adjacent(uint8_t tx, uint8_t ty);
+void select_then_kill_tile(uint8_t tx, uint8_t ty);
+void select_tile(uint8_t tx, uint8_t ty);
 #endif
