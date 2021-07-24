@@ -5,6 +5,8 @@
 
 extern const uint8_t c[];
 
+extern uint8_t a;
+extern uint8_t b;
 extern uint8_t i;
 extern uint8_t j;
 extern uint8_t x;

@@ -23,7 +23,7 @@ void main(){
 
     init();
 
-    printf(" \n\n\n\n\n      SAMEGAME!\n\n\n\n\n    PRESS START!\n");
+    printf(" \n\n\n\n\n      SAMEGAME\n\n\n\n\n    PRESS START!\n");
     // abuse user input for seed generation
     waitpad(J_START);
     

@@ -34,6 +34,26 @@ void set_cursor(){
 
 void check_input(){
     switch(joypad()) {
+        case J_A:
+            if (holdtime == 0){
+                select_tile(cursor_x, cursor_y);
+            }
+            holdtime = 8;
+            break;
+        case J_START:
+            if (holdtime == 0){
+                init_playfield();
+            }
+            holdtime = 8;
+            break;
+        case J_SELECT:
+            if (holdtime == 0){
+                num_tile_types += 1;
+                if (num_tile_types == 7){num_tile_types = 2;}
+                init_playfield();
+            }
+            holdtime = 8;
+            break;
         case J_LEFT:
             if (holdtime % 8 == 0){
                 cursor_x = (cursor_x+sx-1) % sx;
@@ -57,12 +77,6 @@ void check_input(){
                 cursor_y = (cursor_y+sy+1) % sy;
             }
             holdtime += 1;
-            break;
-        case J_A:
-            if (holdtime == 0){
-                select_tile(cursor_x, cursor_y);
-            }
-            holdtime = 8;
             break;
         default:
             holdtime = 0;

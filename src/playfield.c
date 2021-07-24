@@ -17,9 +17,15 @@ const uint16_t tilePalette[] = {
 const uint8_t gametile_palettes[] = {0, 1, 1, 2, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 uint8_t playfield[sx][sy];
-uint8_t trk_x = 0;
-uint8_t trk_y = 0;
-uint8_t trk_adj = 0;
+uint8_t column_tiles[sx];
+uint8_t adj = 0;
+uint8_t kill_x[40];
+uint8_t kill_y[40];
+uint8_t kill_idx = 0;
+uint8_t kill_add_idx = 0;
+
+uint8_t num_tile_types = 4;
+
 
 void update_bkg_playfield(uint8_t fx, uint8_t fy, uint8_t val){
     VBK_REG = 1;
@@ -32,26 +38,72 @@ void update_playfield(uint8_t fx, uint8_t fy, uint8_t val){
     playfield[fx][fy] = val;
 }
 
+void update_tile(uint8_t fx, uint8_t fy, uint8_t val){
+    update_playfield(fx, fy, val);
+    update_bkg_playfield(fx, fy, val);
+}
+
 void init_playfield(){
     set_bkg_palette(1, 3, tilePalette);
-    for (y=sy-1; y!=255; y--){
-        for (x=0; x<sx; x++){
-            i = randuint8(3) + 1;
+    for (x=0; x<sx; x++){
+        column_tiles[x] = 15;
+        for (y=0; y<sy; y++){
+            i = randuint8(num_tile_types) + 1;
+            //i = 1;
             playfield[x][y] = i;
             update_bkg_playfield(x, y, i);
         }
-    } 
+    }
+    for (i=0; i<40; i++){
+        kill_x[i] = 0;
+        kill_y[i] = 0;
+    }
 }
 
-void kill_tile(uint8_t tx, uint8_t ty){
-    playfield[tx][ty] = 0;
-    update_bkg_playfield(tx, ty, 0);
-    // wait_vbl_done();
+void select_tile(uint8_t tx, uint8_t ty){
+    if (check_tile_for_adjacent(tx, ty) > 0){
+        add_tile_to_kill(tx, ty);
+        kill_tiles();
+        drop_tiles();
+        shift_columns();
+        i=0;
+    }
+}
+
+void add_tile_to_kill(uint8_t kx, uint8_t ky){
+    kill_x[kill_add_idx] = kx;
+    kill_y[kill_add_idx] = ky;
+    kill_add_idx++;
+    if (kill_add_idx == 40){
+        kill_add_idx = 0;
+    }
+}
+
+void kill_tiles(){
+    while (kill_idx != kill_add_idx){
+        kill_tile_then_add_adjacent(kill_x[kill_idx], kill_y[kill_idx]);
+    }
+}
+
+void kill_tile_then_add_adjacent(uint8_t tx, uint8_t ty){
+    a = check_tile_for_adjacent(tx, ty);
+    kill_tile(tx, ty);
+    if (a & 1 << 3){
+        add_tile_to_kill(tx, ty+1);
+    }
+    if (a & 1 << 2){
+        add_tile_to_kill(tx, ty-1);
+    }
+    if (a & 1 << 1){
+        add_tile_to_kill(tx-1, ty);
+    }
+    if (a & 1){
+        add_tile_to_kill(tx+1, ty);
+    }
+    i++;
 }
 
 uint8_t check_tile_for_adjacent(uint8_t tx, uint8_t ty){
-    trk_x = tx;
-    trk_y = ty;
     uint8_t val = playfield[tx][ty];
     if (val == 0){
         return 0;
@@ -84,27 +136,67 @@ uint8_t check_tile_for_adjacent(uint8_t tx, uint8_t ty){
     return good;
 }
 
-void check_then_kill_tile(uint8_t tx, uint8_t ty){
-    uint8_t adj = check_tile_for_adjacent(tx, ty);
-    trk_adj = adj;
-    kill_tile(tx, ty);
-    if (adj & 1 << 3){
-        check_then_kill_tile(tx, ty+1);
+void kill_tile(uint8_t tx, uint8_t ty){
+    erase_tile(tx, ty);
+    kill_x[kill_idx] = 0;
+    kill_y[kill_idx] = 0;
+    kill_idx++;
+    if (kill_idx == 40){
+        kill_idx = 0;
     }
-    if (adj & 1 << 2){
-        check_then_kill_tile(tx, ty-1);
-    }
-    if (adj & 1 << 1){
-        check_then_kill_tile(tx-1, ty);
-    }
-    if (adj & 1){
-        check_then_kill_tile(tx+1, ty);
-    }
-    
 }
 
-void select_tile(uint8_t tx, uint8_t ty){
-    if (check_tile_for_adjacent(tx, ty) > 0){
-        check_then_kill_tile(tx, ty);
+void erase_tile(uint8_t tx, uint8_t ty){
+    if (playfield[tx][ty] == 0){
+        return;
     }
+    playfield[tx][ty] = 0;
+    update_bkg_playfield(tx, ty, 0);
+    column_tiles[tx] -= 1;
+    wait_vbl_done();
+    i=0;
+}
+
+void drop_tiles(){
+    for (x=0; x<sx; x++){
+        for (y=sy-1; y!=255; y--){
+            if (playfield[x][y] != 0){
+                continue;
+            }
+            for(i=y-1; i!=255; i--){
+                a = playfield[x][i];
+                if (a == 0){
+                    continue;
+                }
+                playfield[x][i] = 0;
+                update_bkg_playfield(x, i, 0);
+                playfield[x][y] = a;
+                update_bkg_playfield(x, y, a);
+                break;
+            }
+        }
+    }
+}
+
+void shift_columns(){
+    for (x=sx-1; x!=255; x--){
+        if (column_tiles[x] != 0){
+            continue;
+        }
+        for(i=x-1; i!=255; i--){
+            if (column_tiles[i] == 0){
+                continue;
+            }
+            for(j=0; j<sy; j++){
+                a = playfield[i][j];
+                playfield[x][j] = a;
+                update_bkg_playfield(x, j, a);
+                playfield[i][j] = 0;
+                update_bkg_playfield(i, j, 0);
+            }
+            column_tiles[x] = column_tiles[i];
+            column_tiles[i] = 0;
+            break;
+        }
+    } 
 }
